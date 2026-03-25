@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String
+  clinicName   String?
+  clinicAddress String?
+  clinicPhone   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Patient {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
+  address      String?
+  dateOfBirth  DateTime?
+  gender       String?
+  bloodGroup   String?
+  allergies    String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  bills        Bill[]
+}
+
+model InventoryItem {
+  id          String   @id @default(cuid())
+  name        String
+  category    String?
+  description String?
+  unit        String   // e.g., "tablet", "bottle", "piece"
+  unitPrice   Float
+  stockQuantity Int    @default(0)
+  minStockLevel Int    @default(10)
+  expiryDate  DateTime?
+  batchNumber String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  billItems   BillItem[]
+}
+
+model Bill {
+  id              String   @id @default(cuid())
+  billNumber      String   @unique
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  items           BillItem[]
+  subtotal        Float
+  tax             Float    @default(0)
+  discount        Float    @default(0)
+  total           Float
+  paymentMethod   String?  // "cash", "card", "upi", "insurance"
+  paymentStatus   String   @default("pending") // "pending", "paid", "partial"
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model BillItem {
+  id              String   @id @default(cuid())
+  billId          String
+  bill            Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  inventoryItemId String?
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  itemName        String
+  quantity        Int
+  unitPrice       Float
+  totalPrice      Float
+  createdAt       DateTime @default(now())
+}
+
+model Settings {
+  id              String   @id @default(cuid())
+  taxEnabled      Boolean  @default(false)
+  gstNumber       String?
+  cgstPercentage  Float    @default(0)
+  sgstPercentage  Float    @default(0)
+  offersEnabled   Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model Offer {
+  id          String   @id @default(cuid())
+  name        String
+  percentage  Float
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
